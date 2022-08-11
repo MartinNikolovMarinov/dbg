@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Configuration",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "${default}",
+                "DEBUG=1",
+                "USE_ASSERT=1"
+            ],
+            "compilerPath": "${default}",
+            "cStandard": "c17",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}
