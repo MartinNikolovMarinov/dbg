@@ -1,3 +1,6 @@
 [submodule "libs/linenoise"]
 	path = libs/linenoise
 	url = https://github.com/antirez/linenoise
+[submodule "libs/core"]
+	path = libs/core
+	url = https://github.com/MartinNikolovMarinov/core.git

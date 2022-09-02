@@ -50,18 +50,24 @@ add_executable(${PROJECT_NAME}
     ${LINENOISE_SRC_FILES}
 )
 
-set(COMMON_CFLAGS
-    -std=c++17
-    -Wall -Wextra
-    -Wno-unknown-pragmas
-)
-
+# Compiler options:
 if (COMPILER STREQUAL "gcc" OR COMPILER STREQUAL "clang")
-    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE ${COMMON_CFLAGS} -O0 -g -ggdb)
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE ${COMMON_CFLAGS}
+        -std=c++17
+        -O0 -g -ggdb
+        -Wall -Wextra -Wno-unknown-pragmas
+    )
 else()
     message(FATAL_ERROR "Unsupported compiler!")
 endif()
 
+# Core library related:
+option(CORE_LIBRARY_SHARED "" OFF)
+option(CORE_DEBUG "" ON)
+target_link_libraries(${PROJECT_NAME} core)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/core/src)
+
+# Target include directories:
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/linenoise

@@ -1,3 +1,5 @@
+#include <core.h>
+
 #include <iostream>
 #include <iomanip>
 #include <cstring>
@@ -17,6 +19,8 @@
 #include <sys/user.h>
 
 #include <linenoise.h>
+
+using namespace coretypes;
 
 enum struct Reg : int {
     DEFAULT,
