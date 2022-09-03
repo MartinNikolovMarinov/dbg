@@ -62,6 +62,8 @@
         "unordered_set": "cpp",
         "numbers": "cpp",
         "semaphore": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "cerrno": "cpp",
+        "variant": "cpp"
     }
 }
