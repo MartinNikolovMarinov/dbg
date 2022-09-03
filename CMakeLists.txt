@@ -24,7 +24,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
     target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
         -O0 -g -ggdb
         -std=c++17
-        -Wall -Wextra -Wno-unknown-pragmas
+        -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-function
     )
 else()
     message(FATAL_ERROR "Unsupported compiler!")

@@ -26,30 +26,14 @@ using namespace coretypes;
 */
 
 i32 main(i32, const char**, const char**) {
-    auto res = core::fs::OpenFile("main.cpp", O_RDONLY, 0);
-    if (res.IsErr()) {
-        std::cout << res.err.msg << std::endl;
+    std::vector<u8> out;
+    if (auto res = core::fs::ReadFileFull("main.cpp", O_RDONLY, 0, out); res.IsErr()) {
+        std::cout << "Error: " << res.msg << std::endl;
         return 1;
     }
 
-    auto file = std::move(res.val);
-    constexpr u64 SIZE = 180;
-
-    u8 buf[SIZE];
-    auto readRes = core::io::Read<core::fs::File, core::fs::File::ReadResponse>(file, buf, SIZE);
-    if (core::io::IsErr(readRes)) {
-        std::cout << core::io::Err(readRes).msg << std::endl;
-        return 1;
-    }
-    buf[SIZE - 1] = '\0';
-
-    std::cout << buf << std::endl;
-    std::cout << core::io::N(readRes) << std::endl;
-
-    if (auto res = core::io::Close<core::fs::File, core::fs::File::CloseResponse>(file); res.IsErr()) {
-        std::cout << res.Err().msg << std::endl;
-        return 1;
-    }
-
+    std::cout << "Read " << out.size() << " bytes" << '\n';
+    std::string str (out.begin(), out.end());
+    std::cout << "Content: " << str << std::endl;
     return 0;
 }
