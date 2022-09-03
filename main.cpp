@@ -12,8 +12,6 @@
 
 #include <elf.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 
 using namespace coretypes;
@@ -26,10 +24,12 @@ using namespace coretypes;
  * describe the rest of the particularities of the file.
 */
 
+// TODO: Should I continue working with FAT Errors ?
+
 struct File {
     static constexpr u32 DEFAULT_BUF_SIZE = 1024;
 
-    static constexpr std::string_view ERR_EOF = "EOF"; // TODO: Probably should not use strings for errors ?
+    static constexpr std::string_view ERR_EOF = "EOF";
 
     File() = default;
     File(core::plt::FileDesc&& file) : m_file(std::move(file)) {}
@@ -107,22 +107,22 @@ private:
 };
 
 core::error::ErrorValue<File> OpenFile(std::string_view path, u64 flag, u64 mode) {
-    auto rawFd = open(path.data(), flag, mode); // TODO: move open to plt
-    if (rawFd < 0) {
+    auto openRes =  core::plt::OsOpen(path.data(), flag, mode);
+    if (!openRes.b.isOk()) {
         return { {}, { std::string("failed to open file: \"") + path.data() + std::string("\"; reason: ") + std::strerror(errno) }};
     }
-
-    core::plt::FileDesc fd;
-    fd.desc = reinterpret_cast<void*>(rawFd);
+    core::plt::FileDesc fd = openRes.a;
     File file(std::move(fd));
     return { std::move(fd), {} };
 }
 
 namespace core::io {
 
-template<> bool               core::io::IsErr(const File::ReadResponse& res)  { return res.IsErr(); }
-template<> core::error::Error core::io::Err(const File::ReadResponse& res)    { return res.Err(); }
-template<> u64                core::io::N(const File::ReadResponse& res)      { return res.N(); }
+using Error = core::error::Error;
+
+template<> bool  core::io::IsErr(const File::ReadResponse& res)  { return res.IsErr(); }
+template<> Error core::io::Err(const File::ReadResponse& res)    { return res.Err(); }
+template<> u64   core::io::N(const File::ReadResponse& res)      { return res.N(); }
 
 template<> File::ReadResponse core::io::Read(File& r, void* buf, u64 size) { return r.Read(buf, size); }
 
