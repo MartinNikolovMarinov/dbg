@@ -6,37 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # Generates compile_commands.json
 
-macro(set_platform_variables)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(COMPILER "gcc" CACHE INTERNAL "used compiler")
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(COMPILER "clang" CACHE INTERNAL "used compiler")
-    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        set(COMPILER "msvc" CACHE INTERNAL "used compiler")
-    endif()
-
-    if (WIN32 OR MSVC OR MSYS OR MINGW)
-        set(OS "windows" CACHE INTERNAL "operating system")
-    elseif(APPLE)
-        set(OS "osx" CACHE INTERNAL "operating system")
-    elseif(UNIX AND NOT APPLE)
-        set(OS "linux" CACHE INTERNAL "operating system")
-    endif()
-
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(DEBUG 0 CACHE INTERNAL "debug mode")
-    else()
-        set(CMAKE_BUILD_TYPE DEBUG CACHE INTERNAL "")
-        set(DEBUG 1 CACHE INTERNAL "debug mode")
-    endif()
-endmacro()
-
-# Check system requrenments:
-set_platform_variables()
-message(STATUS "[INFO] Compiler: ${COMPILER}")
-message(STATUS "[INFO] Platform: ${OS}")
-message(STATUS "[INFO] Debug: ${DEBUG}")
-
 # Source files for executable
 set(SRC_FILES
     main.cpp
@@ -51,10 +20,10 @@ add_executable(${PROJECT_NAME}
 )
 
 # Compiler options:
-if (COMPILER STREQUAL "gcc" OR COMPILER STREQUAL "clang")
-    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE ${COMMON_CFLAGS}
-        -std=c++17
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE
         -O0 -g -ggdb
+        -std=c++17
         -Wall -Wextra -Wno-unknown-pragmas
     )
 else()
