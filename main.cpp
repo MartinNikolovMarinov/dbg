@@ -1,39 +1,34 @@
-#include <core.h>
-#include <core_error.h>
-#include <io.h>
-#include <plt.h>
+#include "elf_types.h"
+#include "elf_parser.h"
+#include "str_serializer.h"
+#include "init.h"
+
 #include <fs.h>
 
-#include <algorithm>
-#include <vector>
 #include <iostream>
-#include <optional>
-#include <errno.h>
-#include <cstring>
-
-#include <elf.h>
-
 #include <fcntl.h>
 
 using namespace coretypes;
 
-/**
- * NOTE: This information is taken from the linux manuam elf(5) entry.
- *
- * ELF - Executable and Linkable Format (ELF) files. The ELF header is always at offset zero of the file. The program
- * header table and the section header table's offset in the file are defined in the ELF header.  The two tables
- * describe the rest of the particularities of the file.
-*/
+const char* helloWorldBinPath = PATH_TO_DATA "/bin/hello_world";
 
 i32 main(i32, const char**, const char**) {
-    std::vector<u8> out;
-    if (auto res = core::fs::ReadFileFull("main.cpp", O_RDONLY, 0, out); res.IsErr()) {
-        std::cout << "Error: " << res.msg << std::endl;
+    dbg::Init();
+
+    elf::ByteBuff fileBytes;
+    if (auto res = core::fs::ReadFileFull(helloWorldBinPath, O_RDONLY, 0, fileBytes); res.IsErr()) {
+        std::cout << "Error: " << res.Err() << std::endl;
         return 1;
     }
 
-    std::cout << "Read " << out.size() << " bytes" << '\n';
-    std::string str (out.begin(), out.end());
-    std::cout << "Content: " << str << std::endl;
+    elf::ElfParser p(std::move(fileBytes));
+    if (auto err = p.Parse(); err.IsErr()) {
+        std::cout << "Error: " << err.Err() << std::endl;
+        return 1;
+    }
+
+    auto header = p.GetElf64Header();
+    std::cout << dbg::Str(header) << std::endl;
+
     return 0;
 }

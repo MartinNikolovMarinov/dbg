@@ -9,6 +9,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # Generates compile_commands.json
 # Source files for executable
 set(SRC_FILES
     main.cpp
+    init.h
+    init.cpp
+    str_serializer.h
+    str_serializer.cpp
+    elf_types.h
+    elf_parser.h
+    elf_parser.cpp
 )
 set(LINENOISE_SRC_FILES
     libs/linenoise/linenoise.c
@@ -29,6 +36,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clan
 else()
     message(FATAL_ERROR "Unsupported compiler!")
 endif()
+
+# Definitions:
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    -DPATH_TO_DATA="${CMAKE_CURRENT_SOURCE_DIR}/data"
+)
 
 # Core library related:
 option(CORE_LIBRARY_SHARED "" ON) # FIXME: might want to statically link
