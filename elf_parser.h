@@ -25,7 +25,7 @@ using ElfEncoding        = elf::ElfEncoding;
 using ElfOSAbi           = elf::ElfOSAbi;
 using ElfType            = elf::ElfType;
 
-static constexpr i32 ElfHeaderInvalidSize     = 1;
+static constexpr i32 ElfFileIsShortErr        = 1;
 static constexpr i32 ElfHeaderInvalidMagicErr = 2;
 static constexpr i32 ElfHeaderInvalidClassErr = 3;
 static constexpr i32 ElfHeaderIsNot32BitErr   = 4;
@@ -36,15 +36,26 @@ struct ElfParser {
 
     ElfError Parse();
 
-    const ElfHeader32_Packed& GetElf32Header() const;
-    const ElfHeader64_Packed& GetElf64Header() const;
+    bool Is64Bit() const { return m_is64Bit; }
+    const ElfHeader32_Packed* GetElf32Header() const;
+    const ElfHeader64_Packed* GetElf64Header() const;
+
+    i64 ProgHeaderSize() const { return m_progHeaderSize; }
+    i64 ProgHeaderCount() const { return m_progHeaderCount; }
+    const ElfProgHeader32_Packed* GetElf32ProgHeader(i32 idx) const;
+    const ElfProgHeader64_Packed* GetElf64ProgHeader(i32 idx) const;
 
 private:
     ByteBuff m_bytes;
 
-    // Elf related types:
-    BytesIt m_headerIt;
-    bool m_is64Bit;
+    // Elf Header:
+    BytesIt m_elfHeaderIt;
+    bool    m_is64Bit;
+
+    // Program Header Table:
+    BytesIt m_progHeaderIt;
+    i64     m_progHeaderSize;
+    i64     m_progHeaderCount;
 
     ElfError ParseElfHeader(BytesIt& it);
     ElfError CheckMagic(BytesIt& it);

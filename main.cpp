@@ -27,8 +27,15 @@ i32 main(i32, const char**, const char**) {
         return 1;
     }
 
+    // Parsing the ELF header:
     auto header = p.GetElf64Header();
-    std::cout << dbg::Str(header) << std::endl;
+    std::cout << dbg::Str(*header) << std::endl;
+
+    // Parsing the program headers:
+    for (i64 i = 0; i < p.ProgHeaderCount(); i++) {
+        auto pHeader = p.GetElf64ProgHeader(i);
+        std::cout << dbg::Str(*pHeader) << std::endl;
+    }
 
     return 0;
 }

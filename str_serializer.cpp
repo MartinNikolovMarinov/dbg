@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <type_traits>
 
 namespace dbg
 {
@@ -57,20 +58,34 @@ const char* Str(ElfType v) {
     }
 }
 
-// FIXME: Fix this slow dog shit. Code below this comment is just embarrassing.
-
-
-template <typename I> std::string IntToHex(I w, size_t hex_len = sizeof(I)<<1) {
-    static const char* digits = "0123456789ABCDEF";
-    std::string rc(hex_len, '0');
-    for (size_t i=0, j=(hex_len-1)*4 ; i<hex_len; ++i,j-=4) {
-        rc[i] = digits[(w>>j) & 0x0f];
-    }
-    return rc;
-}
+// FIXME: Code below this comment is just embarrassing.
+//        I actually need a good formatting library. Somthing like fmtlib, or write my own.
 
 namespace
 {
+
+std::string& LTrimStr(std::string& str, std::string_view chars) {
+    str.erase(0, str.find_first_not_of(chars));
+    return str;
+}
+
+std::string& RTrimStr(std::string& str, std::string_view chars) {
+    str.erase(str.find_last_not_of(chars) + 1);
+    return str;
+}
+
+std::string& TrimStr(std::string& str, std::string_view chars) {
+    return LTrimStr(RTrimStr(str, chars), chars);
+}
+
+template <typename TInt> std::string IntToHexStr(TInt w, size_t hex_len = sizeof(TInt)<<1) {
+    static_assert(std::is_integral_v<TInt>, "integral type required");
+    if (w == 0) return "0x0";
+    std::string res(hex_len, '0'); // 1 copy
+    core::IntToHex(w, res.data(), hex_len);
+    res = LTrimStr(res, "0"); // 2 copies
+    return "0x" + res; // 3 copies
+}
 
 template <typename THeader>
 void CommonElfHeaderToStr(const THeader& v, std::string& out) {
@@ -84,11 +99,11 @@ void CommonElfHeaderToStr(const THeader& v, std::string& out) {
     // Write the rest of the header:
     out += "  Type: " + std::string(Str(v.type)) + "\n";
     out += "  Machine: " + std::to_string(v.machine) + "\n";
-    out += "  Version: " + std::to_string(v.version) + "\n";
-    out += "  Entry point address: " + std::to_string(v.entry) + "\n";
+    out += "  Version: " + IntToHexStr(v.version) + "\n";
+    out += "  Entry point address: " + IntToHexStr(v.entry) + "\n";
     out += "  Start of program headers: " + std::to_string(v.phoff) + "\n";
     out += "  Start of section headers: " + std::to_string(v.shoff) + "\n";
-    out += "  Flags: " + std::to_string(v.flags) + "\n";
+    out += "  Flags: " + IntToHexStr(v.flags) + "\n";
     out += "  Size of this header: " + std::to_string(v.ehsize) + "\n";
     out += "  Size of program headers: " + std::to_string(v.phentsize) + "\n";
     out += "  Number of program headers: " + std::to_string(v.phnum) + "\n";
@@ -107,7 +122,7 @@ std::string Str(const ElfHeader32_Packed& v) {
     ret += "ElfHeader32_Packed {\n";
     ret += "  Magic: ";
     for (u64 i = 0; i < hSizeInBytes; ++i) {
-        ret += IntToHex(bytes[i], sizeof(u8) * 2);
+        ret += IntToHexStr(bytes[i], sizeof(u8) * 2);
         ret += " ";
     }
     ret += "\n";
@@ -124,11 +139,75 @@ std::string Str(const ElfHeader64_Packed& v) {
     ret += "ElfHeader64_Packed {\n";
     ret += "  Magic: ";
     for (u64 i = 0; i < hSizeInBytes; ++i) {
-        ret += IntToHex(bytes[i], sizeof(u8) * 2);
+        ret += IntToHexStr(bytes[i], sizeof(u8) * 2);
         ret += " ";
     }
     ret += "\n";
     CommonElfHeaderToStr(v, ret);
+    ret += "}\n";
+    return ret;
+}
+
+const char* Str(ElfProgHeaderType v) {
+    switch (v) {
+        case ElfProgHeaderType::NUL:        return "NULL";
+        case ElfProgHeaderType::LOAD:       return "LOAD";
+        case ElfProgHeaderType::DYNAMIC:    return "DYNAMIC";
+        case ElfProgHeaderType::INTERP:     return "INTERP";
+        case ElfProgHeaderType::NOTE :      return "NOTE";
+        case ElfProgHeaderType::SHLIB:      return "SHLIB";
+        case ElfProgHeaderType::PHDR:       return "PHDR";
+        case ElfProgHeaderType::TLS:        return "TLS";
+    }
+
+    if (u32(v) >= 0x60000000 && u32(v) <= 0x6FFFFFFF) return "OS SPECIFIC";
+    if (u32(v) >= 0x70000000 && u32(v) <= 0x7FFFFFFF) return "PROC SPECIFIC";
+
+    return "UNKNOWN";
+}
+
+const char* Str(ElfProgHeaderFlags v) {
+    switch (v) {
+        case ElfProgHeaderFlags::E:   return" E";
+        case ElfProgHeaderFlags::W:   return "W";
+        case ElfProgHeaderFlags::R:   return "R";
+        case ElfProgHeaderFlags::RW:  return "RW";
+        case ElfProgHeaderFlags::RE:  return "RE";
+        case ElfProgHeaderFlags::WE:  return "WE";
+        case ElfProgHeaderFlags::RWE: return "RWE";
+        default:                      return "UNKNOWN"; // maybe os specific
+    }
+}
+
+namespace
+{
+
+template<typename THeader>
+void CommonElfProgHeaderToStr(const THeader v, std::string& out) {
+    out += "  Type: " + std::string(Str(v.type)) + "\n";
+    out += "  Offset: " + IntToHexStr(v.offset) + "\n";
+    out += "  Virtual address: " + IntToHexStr(v.vaddr) + "\n";
+    out += "  Physical address: " + IntToHexStr(v.paddr) + "\n";
+    out += "  File size: " + IntToHexStr(v.filesz) + "\n";
+    out += "  Memory size: " + IntToHexStr(v.memsz) + "\n";
+    out += "  Flags: " + std::string(Str(v.flags)) + "\n";
+    out += "  Alignment: " + IntToHexStr(v.align) + "\n";
+}
+
+} // namespace
+
+std::string Str(const ElfProgHeader32_Packed& v) {
+    std::string ret;
+    ret += "ElfProgHeader32_Packed {\n";
+    CommonElfProgHeaderToStr(v, ret);
+    ret += "}\n";
+    return ret;
+}
+
+std::string Str(const ElfProgHeader64_Packed& v) {
+    std::string ret;
+    ret += "ElfProgHeader64_Packed {\n";
+    CommonElfProgHeaderToStr(v, ret);
     ret += "}\n";
     return ret;
 }
