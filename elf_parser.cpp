@@ -25,6 +25,12 @@ ElfError ElfParser::Parse() {
     if (auto err = ParseElfHeader(parseIt); err.IsErr()) {
         return err.Err();
     }
+    if (auto err = ParseElfProgHeader(parseIt); err.IsErr()) {
+        return err.Err();
+    }
+    if (auto err = ParseElfSectionHeader(parseIt); err.IsErr()) {
+        return err.Err();
+    }
 
     return ElfError::Ok;
 }
@@ -45,33 +51,47 @@ const ElfHeader64_Packed* ElfParser::GetElf64Header() const {
 
 const ElfProgHeader32_Packed* ElfParser::GetElf32ProgHeader(i32 idx) const {
     Assert(m_progHeaderIt != m_bytes.end(), "Elf program header not parsed");
-    Assert(!m_is64Bit, "Elf header is NOT 32 bit");
+    Assert(!m_is64Bit, "Elf program header is NOT 32 bit");
     if (idx >= m_progHeaderCount) return nullptr;
-    ElfProgHeader32_Packed* ret;
-    ret = reinterpret_cast<ElfProgHeader32_Packed*>(m_progHeaderIt.base() + (idx * m_progHeaderSize));
+    ElfProgHeader32_Packed* ret = reinterpret_cast<ElfProgHeader32_Packed*>(
+        m_progHeaderIt.base() + (idx * m_progHeaderSize));
     return ret;
 }
 
 const ElfProgHeader64_Packed* ElfParser::GetElf64ProgHeader(i32 idx) const {
     Assert(m_progHeaderIt != m_bytes.end(), "Elf program header not parsed");
-    Assert(m_is64Bit, "Elf header is NOT 64 bit");
+    Assert(m_is64Bit, "Elf program header is NOT 64 bit");
     if (idx >= m_progHeaderCount) return nullptr;
-    ElfProgHeader64_Packed* ret;
-    ret = reinterpret_cast<ElfProgHeader64_Packed*>(m_progHeaderIt.base() + (idx * m_progHeaderSize));
+    ElfProgHeader64_Packed* ret = reinterpret_cast<ElfProgHeader64_Packed*>(
+        m_progHeaderIt.base() + (idx * m_progHeaderSize));
     return ret;
+}
+
+const ElfSectionHeader32_Packed* ElfParser::GetElf32SectionHeader(i32) const {
+    Assert(m_sectionHeaderIt != m_bytes.end(), "Elf section header not parsed");
+    Assert(!m_is64Bit, "Elf section  header is NOT 32 bit");
+    Assert("TODO: Implement");
+    return nullptr;
+}
+
+const ElfSectionHeader64_Packed* ElfParser::GetElf64SectionHeader(i32 idx) const {
+    Assert(m_sectionHeaderIt != m_bytes.end(), "Elf section header not parsed");
+    Assert(m_is64Bit, "Elf section header is NOT 64 bit");
+    Assert("TODO: Implement. This does not work the same way as the program header!!");
+    return nullptr;
 }
 
 ElfError ElfParser::ParseElfHeader(BytesIt& it) {
     if (auto err = CheckMagic(it); err.IsErr()) {
         return err.Err();
     }
-    if (*(it + 4) == ElfClass::CLASSNONE) {
+    if (*(it + 4) == u8(ElfClass::CLASSNONE)) {
         return ElfHeaderInvalidClassErr;
     }
 
     // set the elf header ptr
     m_elfHeaderIt = it;
-    m_is64Bit = (*(it + 4) == ElfClass::ELF64);
+    m_is64Bit = (*(it + 4) == u8(ElfClass::ELF64));
 
     if (m_is64Bit) {
         auto ret = GetElf64Header();
@@ -82,6 +102,10 @@ ElfError ElfParser::ParseElfHeader(BytesIt& it) {
 
         m_progHeaderSize = ret->phentsize;
         m_progHeaderCount = ret->phnum;
+        m_progHeaderOffset = ret->phoff;
+        m_sectionHeaderOffset = ret->shoff;
+        m_sectionHeaderSize = ret->shentsize;
+        m_sectionHeaderCount = ret->shnum;
         it += sizeof(ElfHeader64_Packed);
     } else {
         auto ret = GetElf32Header();
@@ -92,11 +116,28 @@ ElfError ElfParser::ParseElfHeader(BytesIt& it) {
 
         m_progHeaderSize = ret->phentsize;
         m_progHeaderCount = ret->phnum;
+        m_progHeaderOffset = ret->phoff;
+        m_sectionHeaderOffset = ret->shoff;
+        m_sectionHeaderSize = ret->shentsize;
+        m_sectionHeaderCount = ret->shnum;
         it += sizeof(ElfHeader64_Packed);
     }
 
-    // set the prog header ptr
+    return ElfError::Ok;
+}
+
+ElfError ElfParser::ParseElfProgHeader(BytesIt& it) {
+    if (m_progHeaderOffset != u64(it.base() - m_elfHeaderIt.base())) {
+        return ElfInvalidProgramHeaderOffsetErr;
+    }
+
     m_progHeaderIt = it;
+    it += m_progHeaderSize * m_progHeaderCount;
+    return ElfError::Ok;
+}
+
+ElfError ElfParser::ParseElfSectionHeader(BytesIt&) {
+    m_sectionHeaderIt = m_elfHeaderIt + m_sectionHeaderOffset;
     return ElfError::Ok;
 }
 

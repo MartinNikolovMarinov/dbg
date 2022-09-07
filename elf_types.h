@@ -15,41 +15,51 @@ namespace elf
 
 using namespace coretypes;
 
-enum ElfClass : u8 {
-    CLASSNONE = 0, // Invalid class
-    ELF32 = 1,     // 32-bit objects
-    ELF64 = 2      // 64-bit objects
+enum struct ElfClass : u8 {
+    CLASSNONE, // Invalid class
+    ELF32,     // 32-bit objects
+    ELF64,     // 64-bit objects
+
+    COUNT
 };
 
-enum ElfEncoding : u8 {
-    DATANONE = 0,     // Unknown format
-    LITTLEENDIAN = 1, // Little endian
-    BIGENDIAN = 2     // Big endian
+enum struct ElfEncoding : u8 {
+    DATANONE,     // Unknown format
+    LITTLEENDIAN, // Little endian
+    BIGENDIAN,    // Big endian
+
+    COUNT
 };
 
-enum ElfOSAbi : u8 {
-    UNIX = 0,         // UNIX System V ABI
-    HPUX = 1,         // HP-UX
-    NETBSD = 2,       // NetBSD
-    LINUX = 3,        // Object uses GNU ELF extensions
-    SOLARIS = 6,      // Sun Solaris
-    AIX = 7,          // IBM AIX
-    IRIX = 8,         // SGI Irix
-    FREEBSD = 9,      // FreeBSD
-    TRU64 = 10,       // Compaq TRU64 UNIX
-    MODESTO = 11,     // Novell Modesto
-    OPENBSD = 12,     // OpenBSD
+enum struct ElfOSAbi : u8 {
+    UNIX,         // UNIX System V ABI
+    HPUX,         // HP-UX
+    NETBSD,       // NetBSD
+    LINUX,        // Object uses GNU ELF extensions
+    SOLARIS,      // Sun Solaris
+    AIX,          // IBM AIX
+    IRIX,         // SGI Irix
+    FREEBSD,      // FreeBSD
+    TRU64,       // Compaq TRU64 UNIX
+    MODESTO,     // Novell Modesto
+    OPENBSD,     // OpenBSD
+
+    COUNT,
+
+    // Reserved values:
     ARM_AEABI = 64,   // ARM EABI
     ARM = 97,         // ARM
     STANDALONE = 255, // Standalone (embedded) application
 };
 
-enum ElfType : u16 {
+enum struct ElfType : u16 {
     ETNONE, // No file type
     ETREL,  // Relocatable file
     ETEXEC, // Executable file
     ETDYN,  // Shared object file
-    ETCORE  // Core file
+    ETCORE,  // Core file
+
+    COUNT
 };
 
 #pragma pack(push, 1)
@@ -146,10 +156,10 @@ struct ElfHeader64_Packed {
     // This member gives the virtual address to which the system first transfers control, thus starting the process.
     // If the file has no associated entry point, this member holds zero.
     u64 entry;
-    // This member holds the program header table's file offset in bytes.  If the file has no program header table, this
+    // This member holds the program header table's file offset in bytes. If the file has no program header table, this
     // member holds zero.
     u64 phoff;
-    // This member holds the section header table's file offset in bytes.  If the file has no section header table, this
+    // This member holds the section header table's file offset in bytes. If the file has no section header table, this
     // member holds zero.
     u64 shoff;
     // This member holds processor-specific flags associated with the file. Flag names take the form EF_"machine_flag".
@@ -228,7 +238,7 @@ PT_GNU_STACK
     GNU extension which is used by the Linux kernel to control the state of the stack via the flags set in the p_flags
     member.
 */
-enum ElfProgHeaderType : u32 {
+enum struct ElfProgHeaderType : u32 {
     NUL,
     LOAD,
     DYNAMIC,
@@ -237,9 +247,19 @@ enum ElfProgHeaderType : u32 {
     SHLIB,
     PHDR,
     TLS,
+
+    COUNT,
+
+    // Reserved values:
+    LOOS   = 0x60000000, // Start of OS specific
+    HIOS   = 0x6fffffff, // End OS-specific type.
+    LOPROC = 0x70000000, // Start of processor-specific
+    HIPROC = 0x7fffffff, // End of processor-specific
+    LOUSER = 0x80000000, // Start of application-specific
+    HIUSER = 0x8fffffff, // End of application-specific
 };
 
-enum ElfProgHeaderFlags : u32 {
+enum struct ElfProgHeaderFlags : u32 {
     E = 1 << 0,  // An executable segment.
     W = 1 << 1,  // A writable segment.
     R = 1 << 2,  // A readable segment.
@@ -305,6 +325,152 @@ struct ElfProgHeader64_Packed {
     u64 align;
 };
 static_assert(sizeof(ElfProgHeader64_Packed) == 56);
+#pragma pack(pop)
+
+// SECTION HEAEADER (Shdr)
+
+enum ElfSectionType : u32 {
+    // This value marks the section header as inactive. It does not have an associated section. Other members of the
+    // section header have undefined values.
+    NUL,
+    // This section holds information defined by the program, whose format and meaning are determined solely by the
+    // program.
+    PROGBITS,
+    // This section holds a symbol table. Typically, SHT_SYMTAB provides symbols for link editing, though it may also be
+    // used for dynamic linking. As a complete symbol table, it may contain many symbols unnecessary for dynamic
+    // linking. An object file can also contain a SHT_DYNSYM section.
+    SYMTAB,
+    // This section holds a string table. An object file may have multiple string table sections.
+    STRTAB,
+    // This section holds relocation entries with explicit addends, such as type Elf32_Rela for the 32-bit class of
+    // object files.  An object may have multiple relocation sections.
+    RELA,
+    // This section holds a symbol hash table.  An object participating in dynamic linking must contain a symbol hash
+    // table. An object file may have only one hash table.
+    HASH,
+    // This section holds information for dynamic linking. An object file may have only one dynamic section.
+    DYNAMIC,
+    // This section holds notes (ElfN_Nhdr).
+    NOTE,
+    // A section of this type occupies no space in the file but otherwise resembles SHT_PROGBITS. Although this section
+    // contains no bytes, the sh_offset member contains the conceptual file offset.
+    NOBITS,
+    // This section holds relocation offsets without explicit addends, such as type Elf32_Rel for the 32-bit class of
+    // object files.  An object file may have multiple relocation sections.
+    REL,
+    // This section is reserved but has unspecified semantics.
+    SHLIB,
+    // This section holds a minimal set of dynamic linking symbols.  An object file can also contain a SHT_SYMTAB
+    // section.
+    DYNSYM,
+
+    COUNT,
+
+    // Reserved values:
+
+    LOOS   = 0x60000000, // Start OS-specific.
+    LOSUNW = 0x6ffffffa, // Start Sun-specific.
+    HISUNW = 0x6fffffff, // End Sun-specific.
+    HIOS   = 0x6fffffff, // End OS-specific type
+    LOPROC = 0x70000000, // Start of processor-specific
+    HIPROC = 0x7fffffff, // End of processor-specific
+    LOUSER = 0x80000000, // Start of user-specific
+    HIUSER = 0x8fffffff, // End of user-specific
+};
+
+#pragma pack(push, 1)
+struct ElfSectionHeader32_Packed {
+    // This member specifies the name of the section. Its value is an index into the section header string table
+    // section, giving the location of a null-terminated string.
+    u32 name;
+    // This member categorizes the section's contents and semantics.
+    ElfSectionType type;
+    // Sections support one-bit flags that describe miscellaneous attributes.  If a flag bit is set in sh_flags, the
+    // attribute is "on" for the section.  Otherwise, the attribute is "off" or does not apply.  Undefined attributes
+    // are set to zero.
+    //
+    // SHF_WRITE
+    //         This section contains data that should be writable during process execution.
+    // SHF_ALLOC
+    //         This section occupies memory during process execution.  Some control sections do not reside in the memory
+    //         image of an object file.  This attribute is off for those sections.
+    // SHF_EXECINSTR
+    //         This section contains executable machine instructions.
+    // SHF_MASKPROC
+    //         All bits included in this mask are reserved for processor-specific semantics.
+    u32 flags;
+    // If this section appears in the memory image of a process, this member holds the address at which the section's
+    // first byte should reside. Otherwise, the member contains zero.
+    u32 addr;
+    // This member's value holds the byte offset from the beginning of the file to the first byte in the section. One
+    // section type, SHT_NOBITS, occupies no space in the file, and its sh_offset member locates the conceptual
+    // placement in the file.
+    u32 offset;
+    // This member holds the section's size in bytes. Unless the section type is SHT_NOBITS, the section occupies
+    // sh_size bytes in the file. A section of type SHT_NOBITS may have a nonzero size, but it occupies no space in the
+    // file.
+    u32 size;
+    // This member holds a section header table index link, whose interpretation depends on the section type.
+    u32 link;
+    // This member holds extra information, whose interpretation depends on the section type.
+    u32 info;
+    // Some sections have address alignment constraints. If a section holds a doubleword, the system must ensure
+    // doubleword alignment for the entire section.  That is, the value of sh_addr must be congruent to zero, modulo the
+    // value of sh_addralign.  Only zero and positive integral powers of two are allowed.  The value 0 or 1 means that
+    // the section has no alignment constraints.
+    u32 addralign;
+    // Some sections hold a table of fixed-sized entries, such as a symbol table.  For such a section, this member gives
+    // the size in bytes for each entry.  This member contains zero if the section does not hold a table of fixed-size
+    // entries.
+    u32 entsize;
+};
+static_assert(sizeof(ElfSectionHeader32_Packed) == 40);
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+struct ElfSectionHeader64_Packed {
+    u32 name;
+    ElfSectionType type;
+    // Sections support one-bit flags that describe miscellaneous attributes.  If a flag bit is set in sh_flags, the
+    // attribute is "on" for the section.  Otherwise, the attribute is "off" or does not apply.  Undefined attributes
+    // are set to zero.
+    //
+    // SHF_WRITE
+    //         This section contains data that should be writable during process execution.
+    // SHF_ALLOC
+    //         This section occupies memory during process execution.  Some control sections do not reside in the memory
+    //         image of an object file.  This attribute is off for those sections.
+    // SHF_EXECINSTR
+    //         This section contains executable machine instructions.
+    // SHF_MASKPROC
+    //         All bits included in this mask are reserved for processor-specific semantics.
+    u64 flags;
+    // If this section appears in the memory image of a process, this member holds the address at which the section's
+    // first byte should reside. Otherwise, the member contains zero.
+    u64 addr;
+    // This member's value holds the byte offset from the beginning of the file to the first byte in the section. One
+    // section type, SHT_NOBITS, occupies no space in the file, and its sh_offset member locates the conceptual
+    // placement in the file.
+    u64 offset;
+    // This member holds the section's size in bytes. Unless the section type is SHT_NOBITS, the section occupies
+    // sh_size bytes in the file. A section of type SHT_NOBITS may have a nonzero size, but it occupies no space in the
+    // file.
+    u64 size;
+    // This member holds a section header table index link, whose interpretation depends on the section type.
+    u32 link;
+    // This member holds extra information, whose interpretation depends on the section type.
+    u32 info;
+    // Some sections have address alignment constraints. If a section holds a doubleword, the system must ensure
+    // doubleword alignment for the entire section.  That is, the value of sh_addr must be congruent to zero, modulo the
+    // value of sh_addralign.  Only zero and positive integral powers of two are allowed.  The value 0 or 1 means that
+    // the section has no alignment constraints.
+    u64 addralign;
+    // Some sections hold a table of fixed-sized entries, such as a symbol table.  For such a section, this member gives
+    // the size in bytes for each entry.  This member contains zero if the section does not hold a table of fixed-size
+    // entries.
+    u64 entsize;
+};
+static_assert(sizeof(ElfSectionHeader64_Packed) == 64);
 #pragma pack(pop)
 
 } // namespace elf

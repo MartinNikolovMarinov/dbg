@@ -158,10 +158,13 @@ const char* Str(ElfProgHeaderType v) {
         case ElfProgHeaderType::SHLIB:      return "SHLIB";
         case ElfProgHeaderType::PHDR:       return "PHDR";
         case ElfProgHeaderType::TLS:        return "TLS";
+        case ElfProgHeaderType::COUNT:      return "UNKNOWN";
+        default:                            break;
     }
 
-    if (u32(v) >= 0x60000000 && u32(v) <= 0x6FFFFFFF) return "OS SPECIFIC";
-    if (u32(v) >= 0x70000000 && u32(v) <= 0x7FFFFFFF) return "PROC SPECIFIC";
+    if (v >= ElfProgHeaderType::LOOS && v <= ElfProgHeaderType::HIOS)     return "OS SPECIFIC";
+    if (v >= ElfProgHeaderType::LOPROC && v <= ElfProgHeaderType::HIPROC) return "PROC SPECIFIC";
+    if (v >= ElfProgHeaderType::LOUSER && v <= ElfProgHeaderType::HIUSER) return "USER SPECIFIC";
 
     return "UNKNOWN";
 }

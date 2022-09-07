@@ -37,5 +37,12 @@ i32 main(i32, const char**, const char**) {
         std::cout << dbg::Str(*pHeader) << std::endl;
     }
 
+    // Parsing the section headers:
+    for (i64 i = 0; i < p.SectionHeaderCount(); i++) {
+        auto sHeader = p.GetElf64SectionHeader(i);
+        // std::cout << dbg::Str(*sHeader) << std::endl;
+        std::cout << sHeader->addr << std::endl;
+    }
+
     return 0;
 }

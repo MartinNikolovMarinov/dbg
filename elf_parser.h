@@ -25,11 +25,12 @@ using ElfEncoding        = elf::ElfEncoding;
 using ElfOSAbi           = elf::ElfOSAbi;
 using ElfType            = elf::ElfType;
 
-static constexpr i32 ElfFileIsShortErr        = 1;
-static constexpr i32 ElfHeaderInvalidMagicErr = 2;
-static constexpr i32 ElfHeaderInvalidClassErr = 3;
-static constexpr i32 ElfHeaderIsNot32BitErr   = 4;
-static constexpr i32 ElfHeaderIsNot64BitErr   = 5;
+static constexpr i32 ElfFileIsShortErr                = 1;
+static constexpr i32 ElfHeaderInvalidMagicErr         = 2;
+static constexpr i32 ElfHeaderInvalidClassErr         = 3;
+static constexpr i32 ElfHeaderIsNot32BitErr           = 4;
+static constexpr i32 ElfHeaderIsNot64BitErr           = 5;
+static constexpr i32 ElfInvalidProgramHeaderOffsetErr = 6;
 
 struct ElfParser {
     ElfParser(ByteBuff&& bytes);
@@ -45,6 +46,11 @@ struct ElfParser {
     const ElfProgHeader32_Packed* GetElf32ProgHeader(i32 idx) const;
     const ElfProgHeader64_Packed* GetElf64ProgHeader(i32 idx) const;
 
+    i64 SectionHeaderSize() const { return m_sectionHeaderSize; }
+    i64 SectionHeaderCount() const { return m_sectionHeaderCount; }
+    const ElfSectionHeader32_Packed* GetElf32SectionHeader(i32 idx) const;
+    const ElfSectionHeader64_Packed* GetElf64SectionHeader(i32 idx) const;
+
 private:
     ByteBuff m_bytes;
 
@@ -56,8 +62,17 @@ private:
     BytesIt m_progHeaderIt;
     i64     m_progHeaderSize;
     i64     m_progHeaderCount;
+    u64     m_progHeaderOffset;
+
+    // Section Header Table:
+    BytesIt m_sectionHeaderIt;
+    i64     m_sectionHeaderSize;
+    i64     m_sectionHeaderCount;
+    u64     m_sectionHeaderOffset;
 
     ElfError ParseElfHeader(BytesIt& it);
+    ElfError ParseElfProgHeader(BytesIt& it);
+    ElfError ParseElfSectionHeader(BytesIt& it);
     ElfError CheckMagic(BytesIt& it);
 };
 
