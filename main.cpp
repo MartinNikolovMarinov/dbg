@@ -3,10 +3,13 @@
 #include "str_serializer.h"
 #include "init.h"
 
+#include <core.h>
 #include <fs.h>
 
 #include <iostream>
 #include <fcntl.h>
+
+#include <core_error.h>
 
 using namespace coretypes;
 
@@ -41,7 +44,9 @@ i32 main(i32, const char**, const char**) {
     for (i64 i = 0; i < p.SectionHeaderCount(); i++) {
         auto sHeader = p.GetElf64SectionHeader(i);
         // std::cout << dbg::Str(*sHeader) << std::endl;
-        std::cout << sHeader->addr << std::endl;
+        if (sHeader->addr) {
+            std::cout << "Section name: " << sHeader->addr << std::endl;
+        }
     }
 
     return 0;

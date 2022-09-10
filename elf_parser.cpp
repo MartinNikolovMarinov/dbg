@@ -70,14 +70,14 @@ const ElfProgHeader64_Packed* ElfParser::GetElf64ProgHeader(i32 idx) const {
 const ElfSectionHeader32_Packed* ElfParser::GetElf32SectionHeader(i32) const {
     Assert(m_sectionHeaderIt != m_bytes.end(), "Elf section header not parsed");
     Assert(!m_is64Bit, "Elf section  header is NOT 32 bit");
-    Assert("TODO: Implement");
+    Assert(false, "TODO: Implement");
     return nullptr;
 }
 
-const ElfSectionHeader64_Packed* ElfParser::GetElf64SectionHeader(i32 idx) const {
+const ElfSectionHeader64_Packed* ElfParser::GetElf64SectionHeader(i32) const {
     Assert(m_sectionHeaderIt != m_bytes.end(), "Elf section header not parsed");
     Assert(m_is64Bit, "Elf section header is NOT 64 bit");
-    Assert("TODO: Implement. This does not work the same way as the program header!!");
+    Assert(false, "TODO: Implement. This does not work the same way as the program header!!");
     return nullptr;
 }
 
