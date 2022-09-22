@@ -1,39 +1,30 @@
 #pragma once
 
-#include "elf_types.h"
-
 #include <core.h>
+#include <fmt/core.h>
 
+#include <elf.h>
 #include <string>
+#include <type_traits>
 
 namespace dbg
 {
 
 using namespace coretypes;
 
-using ElfClass               = elf::ElfClass;
-using ElfEncoding            = elf::ElfEncoding;
-using ElfOSAbi               = elf::ElfOSAbi;
-using ElfType                = elf::ElfType;
-using ElfHeader32_Packed     = elf::ElfHeader32_Packed;
-using ElfHeader64_Packed     = elf::ElfHeader64_Packed;
-using ElfProgHeaderType      = elf::ElfProgHeaderType;
-using ElfProgHeaderFlags     = elf::ElfProgHeaderFlags;
-using ElfProgHeader32_Packed = elf::ElfProgHeader32_Packed;
-using ElfProgHeader64_Packed = elf::ElfProgHeader64_Packed;
+template <typename TInt>
+constexpr std::string IntToHexStr(TInt v, size_t hexLen = sizeof(TInt)<<1) {
+    static_assert(std::is_integral_v<TInt>, "integral type required");
+    return fmt::format("0x{:0{}x}", v, hexLen);
+}
 
-const char* Str(ElfClass v);
-const char* Str(ElfEncoding v);
-const char* Str(ElfOSAbi v);
-const char* Str(ElfType v);
+std::string Str(const Elf32_Ehdr& v);
+std::string Str(const Elf64_Ehdr& v);
 
-std::string Str(const ElfHeader32_Packed& v);
-std::string Str(const ElfHeader64_Packed& v);
+std::string Str(const Elf32_Phdr& v);
+std::string Str(const Elf64_Phdr& v);
 
-const char* Str(ElfProgHeaderType v);
-const char* Str(ElfProgHeaderFlags v);
-
-std::string Str(const ElfProgHeader32_Packed& v);
-std::string Str(const ElfProgHeader64_Packed& v);
+std::string Str(const Elf32_Shdr& v);
+std::string Str(const Elf64_Shdr& v);
 
 } // namespace dbg

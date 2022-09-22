@@ -64,6 +64,11 @@
         "semaphore": "cpp",
         "stop_token": "cpp",
         "cerrno": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "any": "cpp",
+        "codecvt": "cpp",
+        "complex": "cpp",
+        "set": "cpp",
+        "typeindex": "cpp"
     }
 }

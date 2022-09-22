@@ -1,29 +1,21 @@
 #pragma once
 
-#include "elf_types.h"
-
 #include <core.h>
 #include <core_error.h>
+
+#include <elf.h>
 
 #include <vector>
 
 namespace elf
 {
 
+// TODO: I am not taking into account the endianeds of the ELF file. Does this matter for x86 machines and do I care ?
+
 using namespace coretypes;
 
-using ByteBuff = std::vector<u8>;
-using BytesIt  = ByteBuff::iterator;
-
-using ElfError           = core::error::ErrorInt;
-template<typename T>
-using ElfErrorValue      = core::error::ErrorValue<T, ElfError>;
-using ElfHeader32_Packed = elf::ElfHeader32_Packed;
-using ElfHeader64_Packed = elf::ElfHeader64_Packed;
-using ElfClass           = elf::ElfClass;
-using ElfEncoding        = elf::ElfEncoding;
-using ElfOSAbi           = elf::ElfOSAbi;
-using ElfType            = elf::ElfType;
+using ElfByteBuff = std::vector<u8>;
+using ElfError    = core::error::ErrorInt;
 
 static constexpr i32 ElfFileIsShortErr                = 1;
 static constexpr i32 ElfHeaderInvalidMagicErr         = 2;
@@ -31,49 +23,167 @@ static constexpr i32 ElfHeaderInvalidClassErr         = 3;
 static constexpr i32 ElfHeaderIsNot32BitErr           = 4;
 static constexpr i32 ElfHeaderIsNot64BitErr           = 5;
 static constexpr i32 ElfInvalidProgramHeaderOffsetErr = 6;
+static constexpr i32 ElfInvalidProgramHeaderSizeErr   = 7;
+static constexpr i32 ElfInvalidSectionHeaderSizeErr   = 8;
 
+template<int TElfByteSize = 64>
 struct ElfParser {
-    ElfParser(ByteBuff&& bytes);
+    static_assert(TElfByteSize == 32 || TElfByteSize == 64, "TElfByteSize must be 32 or 64");
 
-    ElfError Parse();
+    using ElfEhdr  = std::conditional_t<TElfByteSize == 32, Elf32_Ehdr, Elf64_Ehdr>;
+    using ElfPhdr  = std::conditional_t<TElfByteSize == 32, Elf32_Phdr, Elf64_Phdr>;
+    using ElfShdr  = std::conditional_t<TElfByteSize == 32, Elf32_Shdr, Elf64_Shdr>;
 
-    bool Is64Bit() const { return m_is64Bit; }
-    const ElfHeader32_Packed* GetElf32Header() const;
-    const ElfHeader64_Packed* GetElf64Header() const;
+    ElfParser(ElfByteBuff&& bytes) : m_bytes(std::move(bytes)), m_startEhdr(nullptr) {}
 
-    i64 ProgHeaderSize() const { return m_progHeaderSize; }
-    i64 ProgHeaderCount() const { return m_progHeaderCount; }
-    const ElfProgHeader32_Packed* GetElf32ProgHeader(i32 idx) const;
-    const ElfProgHeader64_Packed* GetElf64ProgHeader(i32 idx) const;
+    ElfError Parse() {
+        if (m_bytes.size() < sizeof(ElfEhdr)) return ElfFileIsShortErr;
 
-    i64 SectionHeaderSize() const { return m_sectionHeaderSize; }
-    i64 SectionHeaderCount() const { return m_sectionHeaderCount; }
-    const ElfSectionHeader32_Packed* GetElf32SectionHeader(i32 idx) const;
-    const ElfSectionHeader64_Packed* GetElf64SectionHeader(i32 idx) const;
+        m_cur = m_bytes.data();
+        if (auto err = ParseElfHeader(); err.IsErr()) return err.Err();
+        if (auto err = ParseElfProgHeader(); err.IsErr()) return err.Err();
+        if (auto err = ParseElfSectionHeader(); err.IsErr()) return err.Err();
+
+        m_cur = nullptr;
+        return ElfError::Ok;
+    }
+
+    const ElfEhdr* GetElfHeader() const {
+        Assert(m_startEhdr != nullptr, "Elf header not parsed");
+        auto ret = reinterpret_cast<const ElfEhdr*>(m_startEhdr);
+        Assert(ret != nullptr, "Implementation error");
+        return ret;
+    }
+
+    u64 ProgHeaderSize()  const { return GetElfHeader()->e_phentsize; }
+    u64 ProgHeaderCount() const { return GetElfHeader()->e_phnum; }
+
+    const ElfPhdr* GetElfProgHeader(i32 idx) const {
+        Assert(m_startPhdr != nullptr, "Elf program header not parsed");
+        auto ehdr = GetElfHeader();
+        if (idx >= ehdr->e_phnum) return nullptr;
+        ElfPhdr* ret = reinterpret_cast<ElfPhdr*>(m_startPhdr + (idx * ProgHeaderSize()));
+        return ret;
+    }
+
+    u64 SectionHeaderSize()  const { return GetElfHeader()->e_shentsize; }
+    u64 SectionHeaderCount() const { return GetElfHeader()->e_shnum; }
+
+    const ElfShdr* GetElfSectionHeader(i32 idx) const {
+        Assert(m_startShdr != nullptr, "Elf section header not parsed");
+        if (idx == SHN_UNDEF) return nullptr; // section is irrelevant/meaningless according to the spec.
+        auto ehdr = GetElfHeader();
+        if (idx >= ehdr->e_shnum) return nullptr;
+        ElfShdr* ret = reinterpret_cast<ElfShdr*>(m_startShdr + (idx * SectionHeaderSize()));
+        return ret;
+    }
+
+    const char* LookupStringTable(i32 offset) const {
+        Assert(m_startShdr != nullptr, "Elf section header not parsed");
+        auto ehdr = GetElfHeader();
+        auto shdr = GetElfSectionHeader(ehdr->e_shstrndx);
+        if (shdr == nullptr) return nullptr;
+        return reinterpret_cast<const char*>(m_startEhdr + shdr->sh_offset + offset);
+    }
+
+    const char* GetSectionName(i32 idx) const {
+        auto shdr = GetElfSectionHeader(idx);
+        if (shdr == nullptr) return nullptr;
+        auto ret = LookupStringTable(shdr->sh_name);
+        return ret;
+    }
 
 private:
-    ByteBuff m_bytes;
+    ElfByteBuff m_bytes;
 
-    // Elf Header:
-    BytesIt m_elfHeaderIt;
-    bool    m_is64Bit;
+    u8* m_cur;
+    u8* m_startEhdr;
+    u8* m_startPhdr;
+    u8* m_startShdr;
 
-    // Program Header Table:
-    BytesIt m_progHeaderIt;
-    i64     m_progHeaderSize;
-    i64     m_progHeaderCount;
-    u64     m_progHeaderOffset;
+    ElfError ParseElfHeader() {
+        // Some PROTOCOL edge cases are not handled:
+        // TODO: e_phoff can be zero if the file has no program header !
+        // TODO: e_shoff can be zero if the file has no section header !
+        // TODO: e_phnum
+        // If the number of entries in the program header table is
+        // larger than or equal to PN_XNUM (0xffff), this member
+        // holds PN_XNUM (0xffff) and the real number of entries in
+        // the program header table is held in the sh_info member of
+        // the initial entry in section header table.  Otherwise, the
+        // sh_info member of the initial entry contains the value
+        // zero.
+        // TODO: e_shnum
+        // If the number of entries in the section header table is
+        // larger than or equal to SHN_LORESERVE (0xff00), e_shnum
+        // holds the value zero and the real number of entries in the
+        // section header table is held in the sh_size member of the
+        // initial entry in section header table.  Otherwise, the
+        // sh_size member of the initial entry in the section header
+        // table holds the value zero.
+        // TODO: e_shstrndx
+        // If the index of section name string table section is
+        // larger than or equal to SHN_LORESERVE (0xff00), this
+        // member holds SHN_XINDEX (0xffff) and the real index of the
+        // section name string table section is held in the sh_link
+        // member of the initial entry in section header table.
+        // Otherwise, the sh_link member of the initial entry in
+        // section header table contains the value zero.
 
-    // Section Header Table:
-    BytesIt m_sectionHeaderIt;
-    i64     m_sectionHeaderSize;
-    i64     m_sectionHeaderCount;
-    u64     m_sectionHeaderOffset;
 
-    ElfError ParseElfHeader(BytesIt& it);
-    ElfError ParseElfProgHeader(BytesIt& it);
-    ElfError ParseElfSectionHeader(BytesIt& it);
-    ElfError CheckMagic(BytesIt& it);
+        if (auto err = CheckMagic(m_cur); err.IsErr()) {
+            return err.Err();
+        }
+        if (*(m_cur + 4) != ELFCLASS32 && *(m_cur + 4) != ELFCLASS64) {
+            return ElfHeaderInvalidClassErr;
+        }
+
+        if constexpr (TElfByteSize == 32) {
+            if (*(m_cur + 4) != ELFCLASS32) return ElfHeaderIsNot32BitErr;
+        } else {
+            if (*(m_cur + 4) != ELFCLASS64) return ElfHeaderIsNot64BitErr;
+        }
+
+        // set the elf header ptr
+        m_startEhdr = m_cur;
+        auto ehdr = GetElfHeader();
+        if (ehdr->e_ehsize != sizeof(ElfEhdr)) {
+            // ElfClass field lied to me !
+            return ElfHeaderIsNot64BitErr;
+        }
+        m_cur += sizeof(ElfEhdr);
+        return ElfError::Ok;
+    }
+
+    ElfError ParseElfProgHeader() {
+        auto ehdr = GetElfHeader();
+        if (ehdr->e_phentsize != sizeof(ElfPhdr)) {
+            return ElfInvalidProgramHeaderSizeErr;
+        }
+        if ((m_cur - m_startEhdr) != i64(ehdr->e_phoff)) {
+            return ElfInvalidProgramHeaderOffsetErr;
+        }
+        m_startPhdr = m_cur;
+        m_cur += ehdr->e_phentsize;
+        return ElfError::Ok;
+    }
+
+    ElfError ParseElfSectionHeader() {
+        auto ehdr = GetElfHeader();
+        if (ehdr->e_shentsize != sizeof(ElfShdr)) {
+            return ElfInvalidSectionHeaderSizeErr;
+        }
+        m_startShdr = m_startEhdr + ehdr->e_shoff;
+        return ElfError::Ok;
+    }
+
+    ElfError CheckMagic(u8* ptr) {
+        bool ok = *(ptr + 0) == ELFMAG0 &&
+                  *(ptr + 1) == ELFMAG1 &&
+                  *(ptr + 2) == ELFMAG2 &&
+                  *(ptr + 3) == ELFMAG3;
+        return ok ? ElfError::Ok : ElfHeaderInvalidMagicErr;
+    }
 };
 
 } // namespace elf

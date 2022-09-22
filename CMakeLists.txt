@@ -13,9 +13,7 @@ set(SRC_FILES
     init.cpp
     str_serializer.h
     str_serializer.cpp
-    elf_types.h
     elf_parser.h
-    elf_parser.cpp
 )
 set(LINENOISE_SRC_FILES
     libs/linenoise/linenoise.c
@@ -48,8 +46,13 @@ option(CORE_DEBUG "" ON)
 target_link_libraries(${PROJECT_NAME} core)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/core/src)
 
+# Fmt library related:
+target_link_libraries(${PROJECT_NAME} fmt)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/fmt)
+
 # Target include directories:
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/libs/linenoise
+    ${CMAKE_CURRENT_SOURCE_DIR}/libs/fmt/include
 )

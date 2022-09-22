@@ -1,4 +1,3 @@
-#include "elf_types.h"
 #include "elf_parser.h"
 #include "str_serializer.h"
 #include "init.h"
@@ -18,7 +17,7 @@ const char* helloWorldBinPath = PATH_TO_DATA "/bin/hello_world";
 i32 main(i32, const char**, const char**) {
     dbg::Init();
 
-    elf::ByteBuff fileBytes;
+    elf::ElfByteBuff fileBytes;
     if (auto res = core::fs::ReadFileFull(helloWorldBinPath, O_RDONLY, 0, fileBytes); res.IsErr()) {
         std::cout << "Error: " << res.Err() << std::endl;
         return 1;
@@ -31,22 +30,21 @@ i32 main(i32, const char**, const char**) {
     }
 
     // Parsing the ELF header:
-    auto header = p.GetElf64Header();
-    std::cout << dbg::Str(*header) << std::endl;
+    auto ehdr = p.GetElfHeader();
+    std::cout << dbg::Str(*ehdr) << std::endl;
 
     // Parsing the program headers:
-    for (i64 i = 0; i < p.ProgHeaderCount(); i++) {
-        auto pHeader = p.GetElf64ProgHeader(i);
-        std::cout << dbg::Str(*pHeader) << std::endl;
+    for (i64 i = 0; i < i64(p.ProgHeaderCount()); i++) {
+        auto phdr = p.GetElfProgHeader(i);
+        std::cout << dbg::Str(*phdr) << std::endl;
     }
 
     // Parsing the section headers:
-    for (i64 i = 0; i < p.SectionHeaderCount(); i++) {
-        auto sHeader = p.GetElf64SectionHeader(i);
-        // std::cout << dbg::Str(*sHeader) << std::endl;
-        if (sHeader->addr) {
-            std::cout << "Section name: " << sHeader->addr << std::endl;
-        }
+    for (i64 i = 0; i < i64(p.SectionHeaderCount()); i++) {
+        auto shdr = p.GetElfSectionHeader(i);
+        auto sectionName = p.GetSectionName(i);
+        std::cout << "Section Name: " << sectionName << std::endl;
+        std::cout << dbg::Str(*shdr) << std::endl;
     }
 
     return 0;
