@@ -1,9 +1,12 @@
 #pragma once
 
+#include "elf_section.h"
+
 #include <core.h>
 #include <core_error.h>
 
 #include <elf.h>
+#include <fmt/core.h>
 
 #include <vector>
 
@@ -48,6 +51,8 @@ struct ElfParser {
         return ElfError::Ok;
     }
 
+    const u8* Bytes() { return m_bytes.data(); }
+
     const ElfEhdr* GetElfHeader() const {
         Assert(m_startEhdr != nullptr, "Elf header not parsed");
         auto ret = reinterpret_cast<const ElfEhdr*>(m_startEhdr);
@@ -78,7 +83,22 @@ struct ElfParser {
         return ret;
     }
 
-    const char* LookupStringTable(i32 offset) const {
+    const ElfShdr* GetElfSectionHeader(SectionType type) const {
+        const char* name = SectionTypeToCtpr(type);
+        if (name == nullptr) return nullptr;
+        for (u64 i = 0; i < SectionHeaderCount(); i++) {
+            if (const ElfShdr* shdr = GetElfSectionHeader(i); shdr != nullptr) {
+                const char* shdrName = LookupStringTable(shdr->sh_name);
+                if (core::CptrCmp(shdrName, name) == 0) {
+                    return shdr;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    const char* LookupStringTable(i64 offset) const {
+        // TODO: check if offset goes past the table size !
         Assert(m_startShdr != nullptr, "Elf section header not parsed");
         auto ehdr = GetElfHeader();
         auto shdr = GetElfSectionHeader(ehdr->e_shstrndx);
@@ -86,8 +106,8 @@ struct ElfParser {
         return reinterpret_cast<const char*>(m_startEhdr + shdr->sh_offset + offset);
     }
 
-    const char* GetSectionName(i32 idx) const {
-        auto shdr = GetElfSectionHeader(idx);
+    const char* GetSectionName(i32 sectionIdx) const {
+        auto shdr = GetElfSectionHeader(sectionIdx);
         if (shdr == nullptr) return nullptr;
         auto ret = LookupStringTable(shdr->sh_name);
         return ret;

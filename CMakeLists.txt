@@ -14,6 +14,8 @@ set(SRC_FILES
     str_serializer.h
     str_serializer.cpp
     elf_parser.h
+    elf_section.h
+    elf_section.cpp
 )
 set(LINENOISE_SRC_FILES
     libs/linenoise/linenoise.c

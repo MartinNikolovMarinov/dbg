@@ -1,3 +1,4 @@
+#include "elf_section.h"
 #include "elf_parser.h"
 #include "str_serializer.h"
 #include "init.h"
@@ -14,6 +15,27 @@ using namespace coretypes;
 
 const char* helloWorldBinPath = PATH_TO_DATA "/bin/hello_world";
 
+// Debugging information entry (DIE)
+struct Die {
+    u32 offset;
+    u32 tag;
+    u32 abbrevCode;
+    u32 children;
+    u32 attributes;
+};
+
+u32 DecodeULEB128(const u8* data, u32& idx) {
+    u32 ret = 0;
+    u32 shift = 0;
+    u8 byte = 0;
+    do {
+        byte = data[idx++];
+        ret |= (byte & 0x7f) << shift;
+        shift += 7;
+    } while (byte & 0x80);
+    return ret;
+}
+
 i32 main(i32, const char**, const char**) {
     dbg::Init();
 
@@ -29,23 +51,10 @@ i32 main(i32, const char**, const char**) {
         return 1;
     }
 
-    // Parsing the ELF header:
-    auto ehdr = p.GetElfHeader();
-    std::cout << dbg::Str(*ehdr) << std::endl;
+    auto infoSection = p.GetElfSectionHeader(elf::SectionType::DWARF_INFO);
+    Assert(infoSection != nullptr);
 
-    // Parsing the program headers:
-    for (i64 i = 0; i < i64(p.ProgHeaderCount()); i++) {
-        auto phdr = p.GetElfProgHeader(i);
-        std::cout << dbg::Str(*phdr) << std::endl;
-    }
-
-    // Parsing the section headers:
-    for (i64 i = 0; i < i64(p.SectionHeaderCount()); i++) {
-        auto shdr = p.GetElfSectionHeader(i);
-        auto sectionName = p.GetSectionName(i);
-        std::cout << "Section Name: " << sectionName << std::endl;
-        std::cout << dbg::Str(*shdr) << std::endl;
-    }
+    const u8* debugStart = &(p.Bytes()[infoSection->sh_offset]);
 
     return 0;
 }
