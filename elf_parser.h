@@ -29,7 +29,7 @@ static constexpr i32 ElfInvalidProgramHeaderOffsetErr = 6;
 static constexpr i32 ElfInvalidProgramHeaderSizeErr   = 7;
 static constexpr i32 ElfInvalidSectionHeaderSizeErr   = 8;
 
-template<int TElfByteSize = 64>
+template<i32 TElfByteSize = 64>
 struct ElfParser {
     static_assert(TElfByteSize == 32 || TElfByteSize == 64, "TElfByteSize must be 32 or 64");
 

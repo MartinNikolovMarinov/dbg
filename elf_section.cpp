@@ -9,6 +9,7 @@ namespace
 static struct{ SectionType type; const char* name; } sectionTypeLT[] = {
     { SectionType::UNKNOWN, "unknown" },
     { SectionType::DWARF_INFO, ".debug_info" },
+    { SectionType::DWARF_ABBREV, ".debug_abbrev" },
 };
 }
 

@@ -10,6 +10,7 @@ using namespace coretypes;
 enum struct SectionType : i32 {
     UNKNOWN,
     DWARF_INFO,
+    DWARF_ABBREV,
 
     COUNT
 };
