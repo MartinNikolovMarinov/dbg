@@ -1,9 +1,6 @@
-[submodule "libs/linenoise"]
-	path = libs/linenoise
-	url = https://github.com/antirez/linenoise
-[submodule "libs/core"]
-	path = libs/core
+[submodule "lib/core"]
+	path = lib/core
 	url = https://github.com/MartinNikolovMarinov/core.git
-[submodule "libs/fmt"]
-	path = libs/fmt
-	url = https://github.com/fmtlib/fmt.git
+[submodule "cmake"]
+	path = cmake
+	url = https://github.com/martinnikolovmarinov/cmake-scripts.git

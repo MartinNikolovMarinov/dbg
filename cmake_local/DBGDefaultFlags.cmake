@@ -1,0 +1,5 @@
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    include(DBGClangFlags)
+else()
+    message(FATAL_ERROR "Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
+endif()

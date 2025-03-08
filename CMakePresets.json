@@ -1,0 +1,27 @@
+{
+	"version": 3,
+	"configurePresets": [
+		{
+			"name": "release",
+			"displayName": "Release configuration",
+			"description": "Release configuration",
+			"binaryDir": "${sourceDir}/build",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release",
+				"CMAKE_TOOLCHAIN_FILE": "clang-toolchain.cmake",
+				"DBG_DEBUG": "OFF"
+			}
+		},
+		{
+			"name": "debug",
+			"displayName": "Debug configuration",
+			"description": "Debug configuration",
+			"binaryDir": "${sourceDir}/build",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"CMAKE_TOOLCHAIN_FILE": "clang-toolchain.cmake",
+				"DBG_DEBUG": "ON"
+			}
+		}
+	]
+}
