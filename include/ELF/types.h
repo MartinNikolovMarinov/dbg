@@ -2084,4 +2084,3 @@ const char* convertEMachineToArchName(u16 EMachine) {
         default:               return "None";
     }
 }
-

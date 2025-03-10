@@ -77,8 +77,6 @@ target_link_libraries(${target_main} PUBLIC
 )
 target_include_directories(${target_main} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/ELF
-    ${CMAKE_CURRENT_SOURCE_DIR}/ELF/Relocs
 )
 target_compile_definitions(${target_main} PUBLIC
     "DBG_DEBUG=$<BOOL:${DBG_DEBUG}>"

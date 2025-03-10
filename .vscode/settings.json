@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.ts": "typescript",
         "*.edf": "html",
         "string_view": "cpp",
         "*.tcc": "cpp",
@@ -69,6 +70,8 @@
         "codecvt": "cpp",
         "complex": "cpp",
         "set": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "charconv": "cpp",
+        "*.def": "cpp"
     }
 }
