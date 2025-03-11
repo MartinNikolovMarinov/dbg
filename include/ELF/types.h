@@ -1256,7 +1256,7 @@ struct Elf32_Sym {
   void setBinding(unsigned char b) { setBindingAndType(b, getType()); }
   void setType(unsigned char t) { setBindingAndType(getBinding(), t); }
   void setBindingAndType(unsigned char b, unsigned char t) {
-    st_info = (b << 4) + (t & 0x0f);
+    st_info = static_cast<unsigned char>((b << 4) + (t & 0x0f));
   }
 };
 
@@ -1276,7 +1276,7 @@ struct Elf64_Sym {
   void setBinding(unsigned char b) { setBindingAndType(b, getType()); }
   void setType(unsigned char t) { setBindingAndType(getBinding(), t); }
   void setBindingAndType(unsigned char b, unsigned char t) {
-    st_info = (b << 4) + (t & 0x0f);
+    st_info = static_cast<unsigned char>((b << 4) + (t & 0x0f));
   }
 };
 
@@ -1343,7 +1343,7 @@ struct Elf32_Rel {
   // These accessors and mutators correspond to the ELF32_R_SYM, ELF32_R_TYPE,
   // and ELF32_R_INFO macros defined in the ELF specification:
   Elf32_Word getSymbol() const { return (r_info >> 8); }
-  unsigned char getType() const { return (unsigned char)(r_info & 0x0ff); }
+  unsigned char getType() const { return static_cast<unsigned char>(r_info & 0x0ff); }
   void setSymbol(Elf32_Word s) { setSymbolAndType(s, getType()); }
   void setType(unsigned char t) { setSymbolAndType(getSymbol(), t); }
   void setSymbolAndType(Elf32_Word s, unsigned char t) {
@@ -1360,7 +1360,7 @@ struct Elf32_Rela {
   // These accessors and mutators correspond to the ELF32_R_SYM, ELF32_R_TYPE,
   // and ELF32_R_INFO macros defined in the ELF specification:
   Elf32_Word getSymbol() const { return (r_info >> 8); }
-  unsigned char getType() const { return (unsigned char)(r_info & 0x0ff); }
+  unsigned char getType() const { return static_cast<unsigned char>(r_info & 0x0ff); }
   void setSymbol(Elf32_Word s) { setSymbolAndType(s, getType()); }
   void setType(unsigned char t) { setSymbolAndType(getSymbol(), t); }
   void setSymbolAndType(Elf32_Word s, unsigned char t) {
@@ -1379,11 +1379,11 @@ struct Elf64_Rel {
   // These accessors and mutators correspond to the ELF64_R_SYM, ELF64_R_TYPE,
   // and ELF64_R_INFO macros defined in the ELF specification:
   Elf64_Word getSymbol() const { return (r_info >> 32); }
-  Elf64_Word getType() const { return (Elf64_Word)(r_info & 0xffffffffL); }
+  Elf64_Word getType() const { return static_cast<Elf64_Word>(r_info & 0xffffffffL); }
   void setSymbol(Elf64_Word s) { setSymbolAndType(s, getType()); }
   void setType(Elf64_Word t) { setSymbolAndType(getSymbol(), t); }
   void setSymbolAndType(Elf64_Word s, Elf64_Word t) {
-    r_info = ((Elf64_Xword)s << 32) + (t & 0xffffffffL);
+    r_info = (static_cast<Elf64_Xword>(s) << 32) + (t & 0xffffffffL);
   }
 };
 
@@ -1396,11 +1396,11 @@ struct Elf64_Rela {
   // These accessors and mutators correspond to the ELF64_R_SYM, ELF64_R_TYPE,
   // and ELF64_R_INFO macros defined in the ELF specification:
   Elf64_Word getSymbol() const { return (r_info >> 32); }
-  Elf64_Word getType() const { return (Elf64_Word)(r_info & 0xffffffffL); }
+  Elf64_Word getType() const { return static_cast<Elf64_Word>(r_info & 0xffffffffL); }
   void setSymbol(Elf64_Word s) { setSymbolAndType(s, getType()); }
   void setType(Elf64_Word t) { setSymbolAndType(getSymbol(), t); }
   void setSymbolAndType(Elf64_Word s, Elf64_Word t) {
-    r_info = ((Elf64_Xword)s << 32) + (t & 0xffffffffL);
+    r_info = (static_cast<Elf64_Xword>(s) << 32) + (t & 0xffffffffL);
   }
 };
 

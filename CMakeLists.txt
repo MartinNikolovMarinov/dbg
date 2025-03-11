@@ -65,6 +65,7 @@ set(dbg_src
     main.cpp
 
     src/basic.cpp
+    src/stack_allocator.cpp
 )
 
 # ---------------------------------------- End Declare Source Files ----------------------------------------------------
